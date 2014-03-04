@@ -1,11 +1,38 @@
-module.exports = function() {
+module.exports = function () {
+	var bot = this;
+	
+	// Putting the filesys here so extensions don't have to re-require it
+	this.fs = require('fs');
+	
 	this.config = {};
-	this.data = {};
+	this.storage = {};
 
-	var extensions = require('./extensions')(this);
-	extensions.load('./extensions');
+	// Load/Save storage+config from file
+	this.data = {
+		'load': function(dataFile) {
+			var fileData = JSON.parse(bot.fs.readFileSync(dataFile));
+			bot.config = fileData.config;
+			bot.storage = fileData.storage;
 
-	return {
+			return bot;
+		},
 
+		'save': function(dataFile) {
+			bot.fs.writeFileSync(dataFile, JSON.stringify({config: this.config, storage: this.storage}, null, 4));
+
+			return bot;
+		}
 	};
+
+	// Load extensions in extensionsPath
+	this.extensions = {
+		'load': function (extensionsPath) {
+			var extensions = require('./extensions')(bot);
+			extensions.load(extensionsPath);
+
+			return bot;
+		}
+	};
+
+	return this;
 };
