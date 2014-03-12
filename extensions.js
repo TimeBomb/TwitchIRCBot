@@ -4,15 +4,6 @@ module.exports = function (bot) {
 	var onLoadCallbacks = {};
 	var hooks = [];
 
-	// Extension Scaffolding
-	function Extension(id) {
-		return {
-			'config': bot.config[id] || {}, // ext key-vaLue store
-			'storage': bot.storage[id] || {}, // ext key-value store
-			'api': {}, // ext functions
-		};
-	}
-
 	function hook(callback) {
 		hooks.push(callback);
 
@@ -33,7 +24,11 @@ module.exports = function (bot) {
 				}
 
 				var loadExt = function(extension) {
-					store[extension.id] = extension.run(Extension(extension.id), bot);
+					store[extension.id] = extension.run({
+						'config': bot.config[extension.id] || {}, // ext key-vaLue store
+						'storage': bot.storage[extension.id] || {}, // ext key-value store
+						'api': {}, // ext functions
+					}, bot);
 
 					if (typeof store[extension.id] === 'undefined') {
 						throw 'Extension "' + extension.id + '" must return extension object; currently returns nothing.';
