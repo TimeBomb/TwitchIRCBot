@@ -1,7 +1,8 @@
+// TODO: Create reload api function that intelligently allows to reload only certain [or reload all but certain] extensions
 module.exports = function (bot) {
 	var store = {};
-	var loaded = false;
 	var onLoadCallbacks = {};
+	var hooks = [];
 
 	// Extension Scaffolding
 	function Extension(id) {
@@ -12,34 +13,56 @@ module.exports = function (bot) {
 		};
 	}
 
-	// Loads all extensions; only run once
+	function hook(callback) {
+		hooks.push(callback);
+
+		return bot;
+	};
+
+	// Clears then loads all extensions
 	function load (path) {
-		if (loaded) {
-			throw 'ERROR: Extensions already loaded.';
-		}
+		store = {};
+		onLoadCallbacks = {};
 
 		// Loads uninvocated extension object
-		var loadExtension = function (extension) {
+		var loadExtension = function (ext) {
 			try {
 				// Extension already loaded or extension still requires other extensions
-				if (store.hasOwnProperty(extension.id) || (extension.requires && extension.requires.length > 0)) {
+				if (store.hasOwnProperty(ext.id) || (ext.requires && ext.requires.length > 0)) {
 					return;
 				}
 
-				store[extension.id] = extension.run(Extension(extension.id), bot);
-				bot.config[extension.id] = store[extension.id].config;
-				bot.storage[extension.id] = store[extension.id].storage;
-				bot[extension.id] = store[extension.id].api;
+				var loadExt = function(extension) {
+					store[extension.id] = extension.run(Extension(extension.id), bot);
 
-				console.log('Loaded Extension: ' + extension.id);
+					if (typeof store[extension.id] === 'undefined') {
+						throw 'Extension "' + extension.id + '" must return extension object; currently returns nothing.';
+					}
 
-				if (onLoadCallbacks.hasOwnProperty(extension.id)) {
-					for (var i = 0, len = onLoadCallbacks[extension.id].length; i < len; i++) {
-						onLoadCallbacks[extension.id][i]();
+					bot.config[extension.id] = store[extension.id].config;
+					bot.storage[extension.id] = store[extension.id].storage;
+					bot[extension.id] = store[extension.id].api;
+
+					console.log('Loaded Extension: ' + extension.id);
+
+					if (onLoadCallbacks.hasOwnProperty(extension.id)) {
+						for (var i = 0, len = onLoadCallbacks[extension.id].length; i < len; i++) {
+							onLoadCallbacks[extension.id][i]();
+						}
+					}
+				};
+
+				var stopLoading = false;
+				for(var i = 0, len = hooks.length; i < len; i++) {
+					if (hooks[i](ext, loadExt) === true) {
+						stopLoading = true;
 					}
 				}
+				if (stopLoading !== true) {
+					loadExt(ext);
+				}
 			} catch (e) {
-				console.error('ERROR: Problem loading extension ' + ((extension ? extension.id : '?') || '?') + ': ' + e);
+				console.error('ERROR: Problem loading extension "' + ((ext ? ext.id : '?') || '?') + '": ' + e);
 			}
 		};
 
@@ -82,10 +105,12 @@ module.exports = function (bot) {
 			}
 		}
 
-		loaded = true;
+		return bot;
 	}
 
 	return {
-		'load': load
+		'load': load,
+		'all': store,
+		'hook': hook
 	};
 };

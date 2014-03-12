@@ -1,7 +1,9 @@
 module.exports.id = 'irc';
-module.exports.require = ['storage'];
+module.exports.channels = false;
+module.exports.require = ['channels'];
 module.exports.run = function(ext, bot) {
 	var started = false;
+	var irc = require('irc');
 
 	ext.config.server = ext.config.server || 'irc.twitch.tv';
 	ext.config.name = ext.config.name || 'bot-username';
@@ -11,19 +13,35 @@ module.exports.run = function(ext, bot) {
 	// Start bot - Load data+config from filePath, start IRC server based on config; can only be run once
 	ext.api.start = function () {
 		if (started) {
-			throw 'ERROR: Bot is already started.';
+			throw 'ERROR: Bot IRC is already started.';
 		}
 
-		var irc = require('irc');
-		var client = new irc.Client(ext.config.server, ext.config.name, {
+		ext.api.client = ext.api.client || new irc.Client(ext.config.server, ext.config.name, {
 			username: ext.config.name,
 			password: ext.config.password,
 			debug: ext.config.debug,
 		});
+		ext.api.client.connect(function() {
+			var channels = bot.channels.get();
+			for (var i = 0, len = channels.length; i < len; i++) {
+				ext.api.client.join('#' + channels[i]);
+			}
+		});
 		started = true;
-
+		
 		return bot;
 	};
+
+	ext.api.stop = function () {
+		if (!started) {
+			throw 'ERROR: Bot IRC is not started.';
+		}
+
+		ext.api.client.disconnect();
+		started = false;
+
+		return bot;
+	}
 
 	return ext;
 };

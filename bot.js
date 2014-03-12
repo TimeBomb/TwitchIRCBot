@@ -25,14 +25,7 @@ module.exports = function () {
 	};
 
 	// Load extensions in extensionsPath
-	this.extensions = {
-		'load': function (extensionsPath) {
-			var extensions = require('./extensions')(bot);
-			extensions.load(extensionsPath);
-
-			return bot;
-		}
-	};
+	this.extensions = require('./extensions')(bot);
 
 	return this;
 };
