@@ -1,4 +1,5 @@
 module.exports.id = 'channels';
+module.exports.loadOnce = true;
 module.exports.require = ['storage'];
 module.exports.run = function(ext, bot) {
 	var clone = require('clone');
@@ -17,25 +18,24 @@ module.exports.run = function(ext, bot) {
 	});
 
 	ext.api.add = function(name) {
-		if (channels.indexOf(name) !== -1) {
+		if (ext.storage.channels.indexOf(name) !== -1) {
 			return false;
 		} else {
-			channels.push(name);
+			ext.storage.channels.push(name);
+			bot.data.save();
 			return true;
 		}
-
-		bot.data.save();
 	};
 
 	ext.api.get = function() {
-		return channels;
+		return ext.storage.channels;
 	};
 
 	ext.api.remove = function(name) {
-		if (channels.indexOf(name) === -1) {
+		if (ext.storage.channels.indexOf(name) === -1) {
 			return false;
 		} else {
-			delete channels[name];
+			delete ext.storage.channels[name];
 			return true;
 		}
 

@@ -1,4 +1,5 @@
 module.exports.id = 'irc';
+module.exports.loadOnce = true;
 module.exports.channels = false;
 module.exports.require = ['channels'];
 module.exports.run = function(ext, bot) {
@@ -19,9 +20,11 @@ module.exports.run = function(ext, bot) {
 		ext.api.client = ext.api.client || new irc.Client(ext.config.server, ext.config.name, {
 			username: ext.config.name,
 			password: ext.config.password,
-			debug: ext.config.debug,
+			floodProtection: true,
+			floodProtectionDelay: 2000, // Needs to be >= 2000 to not get IP banned by Twitch; ban is at >30 msgs in 60 seconds
+			debug: ext.config.debug
 		});
-		ext.api.client.connect(function() {
+		ext.api.client.connect(function() {o
 			var channels = bot.channels.get();
 			for (var i = 0, len = channels.length; i < len; i++) {
 				ext.api.client.join('#' + channels[i]);

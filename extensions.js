@@ -1,18 +1,21 @@
-// TODO: Create reload api function that intelligently allows to reload only certain [or reload all but certain] extensions
 module.exports = function (bot) {
 	var store = {};
 	var onLoadCallbacks = {};
 	var hooks = [];
 
-	function hook(callback) {
+	function hook (callback) {
 		hooks.push(callback);
 
 		return bot;
 	};
 
-	// Clears then loads all extensions
-	function load (path) {
-		store = {};
+	// Clears then loads all extensions; overwrite defaults to false; set overwrite to true to overwrite (delete and reload) preexisting extensions
+	function load (path, overwrite) {
+		path = path || './extensions';
+		overwrite = overwrite || false;
+		if (overwrite)  {
+			store = {};
+		}
 		onLoadCallbacks = {};
 
 		// Loads uninvocated extension object
@@ -24,10 +27,17 @@ module.exports = function (bot) {
 				}
 
 				var loadExt = function(extension) {
+					if (store.hasOwnProperty(extension.id) && (!overwrite || extension.loadOnce === true)) {
+						return false;
+					} else if (store.hasOwnProperty(extension.id)) {
+						delete store[extension.id];
+					}
+
 					store[extension.id] = extension.run({
-						'config': bot.config[extension.id] || {}, // ext key-vaLue store
-						'storage': bot.storage[extension.id] || {}, // ext key-value store
-						'api': {}, // ext functions
+						'config': bot.config[extension.id] || {}, // ext key-vaLue store, added to bot config
+						'storage': bot.storage[extension.id] || {}, // ext key-value store, added to bot storage
+						'api': {}, // ext functions, passed to bot
+						'id': extension.id // ext id, for use if ID changes per hook
 					}, bot);
 
 					if (typeof store[extension.id] === 'undefined') {
@@ -45,6 +55,8 @@ module.exports = function (bot) {
 							onLoadCallbacks[extension.id][i]();
 						}
 					}
+
+					return true;
 				};
 
 				var stopLoading = false;

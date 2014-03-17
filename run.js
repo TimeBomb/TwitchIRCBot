@@ -1,4 +1,5 @@
 var bot = require('./bot')()
-	.data.load('./data.json')
-	.extensions.load('./extensions')
+	.data.load()
+	.extensions.load()
 	.irc.start();
+bot.channels.add('timebomb0');

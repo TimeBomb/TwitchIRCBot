@@ -1,5 +1,7 @@
+// TODO: Add config web ui extension & commands extension
 module.exports = function () {
 	var bot = this;
+	var dataFile = './data.json';
 	
 	// Putting the filesys here so extensions don't have to re-require it
 	this.fs = require('fs');
@@ -9,7 +11,8 @@ module.exports = function () {
 
 	// Load/Save storage+config from file
 	this.data = {
-		'load': function(dataFile) {
+		'load': function(dataFilePath) {
+			dataFile = dataFilePath || dataFile;
 			var fileData = JSON.parse(bot.fs.readFileSync(dataFile));
 			bot.config = fileData.config;
 			bot.storage = fileData.storage;
@@ -17,9 +20,8 @@ module.exports = function () {
 			return bot;
 		},
 
-		'save': function(dataFile) {
-			bot.fs.writeFileSync(dataFile, JSON.stringify({config: this.config, storage: this.storage}, null, 4));
-
+		'save': function() {
+			bot.fs.writeFileSync(dataFile, JSON.stringify({config: bot.config, storage: bot.storage}, null, 4));
 			return bot;
 		}
 	};

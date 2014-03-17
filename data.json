@@ -1,4 +1,19 @@
 {
-	"config": {},
-	"storage": {}
+    "config": {
+        "channels": {},
+        "irc": {
+            "server": "irc.twitch.tv",
+            "name": "bot-username",
+            "password": "bot-api-key",
+            "debug": true
+        }
+    },
+    "storage": {
+        "channels": {
+            "channels": [
+                "timebomb0"
+            ]
+        },
+        "irc": {}
+    }
 }
